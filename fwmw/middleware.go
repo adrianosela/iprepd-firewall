@@ -39,7 +39,7 @@ type Firewall struct {
 
 const fwLogPrefix = "[iprepd-firewall]"
 
-var errNoEntry = errors.New("non 200 status code received: 404")
+var noEntryMsg = "non 200 status code received: 404"
 
 // Wrap the firewall around an HTTP handler. The returned http.Handler will
 // only serve requests from IPs which satisfy one or more of the following:
@@ -87,7 +87,7 @@ func (fw *Firewall) Wrap(h http.Handler) http.Handler {
 
 		rep, err := c.GetReputation("ip", srcIP.String())
 		if err != nil {
-			if err == errNoEntry || fw.FailOpen {
+			if err.Error() == noEntry || fw.FailOpen {
 				h.ServeHTTP(w, r)
 				return
 			}
