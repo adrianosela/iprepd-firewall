@@ -11,7 +11,7 @@ Seamless IP reputation based firewall in the form of an HTTP middleware -- using
 
 > **NOTE** that full examples can be found in the ```/examples``` directory
 
-* Create a Firewall struct with the appropriate configuration
+* Create a [fwmw.Firewall](https://godoc.org/github.com/adrianosela/iprepd-firewall/fwmw#Firewall) struct with the appropriate configuration
 
 ```
 fw := fwmw.Firewall{
@@ -38,7 +38,7 @@ fw := fwmw.Firewall{
 }
 ```
 
-* Wrap your [http.Handler](https://golang.org/pkg/net/http/#Handler) with the Wrap() method. The returned http.Handler will only serve requests from IPs which are either whitelisted or  have a reputation above the given RejectBelowScore in iprepd.
+* Wrap your [http.Handler](https://golang.org/pkg/net/http/#Handler) with the [Wrap()](https://godoc.org/github.com/adrianosela/iprepd-firewall/fwmw#Firewall.Wrap) method. The returned http.Handler will only serve requests from IPs which are either whitelisted or  have a reputation above the given RejectBelowScore in iprepd.
 
 ```
 h := yourHandler()

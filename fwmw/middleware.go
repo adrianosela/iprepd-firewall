@@ -10,22 +10,39 @@ import (
 	"github.com/adrianosela/iprepd"
 )
 
-// Firewall is a software defined firewall for HTTP servers
+// Firewall is a software defined firewall for HTTP servers. It uses a trusted
+// iprepd instance and built-in configuration parameters, in order to determine
+// whether an HTTP request should be served or not, given the requests source IP
 type Firewall struct {
-	IPrepdURL        string
-	IPrepdAuthStr    string
+	// [required] url of the iprepd instance to use
+	IPrepdURL string
+
+	// [required] auth string to authenticate against iprepd
+	IPrepdAuthStr string
+
+	// [required] reject any ip with reputation below this score
 	RejectBelowScore int
-	Whitelist        []net.IP
-	LogBlocked       bool
-	FailOpen         bool
-	HTTPClient       *http.Client
+
+	// optionally add IPs you wish to unconditionally allow
+	Whitelist []net.IP
+
+	// optionally log all dropped http requests
+	LogBlocked bool
+
+	// optionally allow any request if there was a problem reaching iprepd
+	FailOpen bool
+
+	// optionally use non-default http client settings
+	HTTPClient *http.Client
 }
 
 const fwLogPrefix = "[iprepd-firewall]"
 
 var errNoEntry = errors.New("non 200 status code received: 404")
 
-// Wrap the firewall around an HTTP handler
+// Wrap the firewall around an HTTP handler. The returned http.Handler will
+// only serve requests from IPs which are either whitelisted or have a
+// reputation above the given RejectBelowScore in iprepd
 func (fw *Firewall) Wrap(h http.Handler) http.Handler {
 	if fw.IPrepdURL == "" {
 		log.Fatalf("%s argument \"IPrepdAuthURL\" cannot be empty", fwLogPrefix)
@@ -58,7 +75,7 @@ func (fw *Firewall) Wrap(h http.Handler) http.Handler {
 					if !fw.FailOpen {
 						if fw.LogBlocked {
 							log.Printf(
-								"%s an error occured getting ip reputation, blocking %s, error: %s",
+								"%s an error occurred getting ip reputation, blocking %s, error: %s",
 								fwLogPrefix,
 								srcIP.String(),
 								err,
