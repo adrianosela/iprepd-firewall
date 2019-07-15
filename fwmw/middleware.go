@@ -87,7 +87,7 @@ func (fw *Firewall) Wrap(h http.Handler) http.Handler {
 
 		rep, err := c.GetReputation("ip", srcIP.String())
 		if err != nil {
-			if err.Error() == noEntry || fw.FailOpen {
+			if err.Error() == noEntryMsg || fw.FailOpen {
 				h.ServeHTTP(w, r)
 				return
 			}
