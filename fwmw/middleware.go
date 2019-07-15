@@ -13,7 +13,7 @@ import (
 // Firewall is a software defined firewall for HTTP servers. It uses Reputation
 // entries from a trusted iprepd instance and built-in configuration parameters
 // in order to determine whether an HTTP request should be served or not given
-// the request's source IP address
+// the request's source ip address
 type Firewall struct {
 	// [required] url of the iprepd instance to use
 	IPrepdURL string
@@ -44,8 +44,8 @@ var errNoEntry = errors.New("non 200 status code received: 404")
 // Wrap the firewall around an HTTP handler. The returned http.Handler will
 // only serve requests from IPs which satisfy one or more of the following:
 //  - the IP is included in the Firewall's whitelist
-//  - the iprepd instance does not have an entry for the IP
-//  - the IP's reputation entry in iprepd has a score above RejectBelowScore
+//  - the IP does not have an entry in iprepd (implying no violations) 
+//  - the IP has an entry in iprepd with a score above RejectBelowScore
 func (fw *Firewall) Wrap(h http.Handler) http.Handler {
 	if fw.IPrepdURL == "" {
 		log.Fatalf("%s argument \"IPrepdAuthURL\" cannot be empty", fwLogPrefix)
