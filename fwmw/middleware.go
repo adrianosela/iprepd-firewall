@@ -42,10 +42,10 @@ const fwLogPrefix = "[iprepd-firewall]"
 var errNoEntry = errors.New("non 200 status code received: 404")
 
 // Wrap the firewall around an HTTP handler. The returned http.Handler will
-// only serve requests from IPs which match one or more of the following:
-//  * the IP is included in the Firewall's whitelist
-//  * the iprepd instance does not have an entry for the IP
-//  * the IP's reputation entry in iprepd has a score above RejectBelowScore
+// only serve requests from IPs which satisfy one or more of the following:
+//  - the IP is included in the Firewall's whitelist
+//  - the iprepd instance does not have an entry for the IP
+//  - the IP's reputation entry in iprepd has a score above RejectBelowScore
 func (fw *Firewall) Wrap(h http.Handler) http.Handler {
 	if fw.IPrepdURL == "" {
 		log.Fatalf("%s argument \"IPrepdAuthURL\" cannot be empty", fwLogPrefix)
