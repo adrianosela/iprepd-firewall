@@ -44,7 +44,7 @@ var errNoEntry = errors.New("non 200 status code received: 404")
 // Wrap the firewall around an HTTP handler. The returned http.Handler will
 // only serve requests from IPs which satisfy one or more of the following:
 //  - the IP is included in the Firewall's whitelist
-//  - the IP does not have an entry in iprepd (implying no violations) 
+//  - the IP does not have an entry in iprepd (implying no violations)
 //  - the IP has an entry in iprepd with a score above RejectBelowScore
 func (fw *Firewall) Wrap(h http.Handler) http.Handler {
 	if fw.IPrepdURL == "" {
@@ -60,50 +60,65 @@ func (fw *Firewall) Wrap(h http.Handler) http.Handler {
 	if err != nil {
 		log.Fatalf("%s could not initialize iprepd client: %s", fwLogPrefix, err)
 	}
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// extract IP from http.Request
-		srcIP := net.ParseIP(strings.Split(r.RemoteAddr, ":")[0])
-		// check whitelist
-		if !isWhitelisted(srcIP, fw.Whitelist) {
-			rep, err := c.GetReputation("ip", srcIP.String())
-			if err != nil {
-				if err == errNoEntry {
-					// not finding a reputation entry implies the
-					// ip does not have any violations applied to it
-					// so we let is pass...
-				} else {
-					// if there was an error with iprepd we only let
-					// the http request through if the user explicitly
-					// set the FailOpen option to true
-					if !fw.FailOpen {
-						if fw.LogBlocked {
-							log.Printf(
-								"%s an error occurred getting ip reputation, blocking %s, error: %s",
-								fwLogPrefix,
-								srcIP.String(),
-								err,
-							)
-						}
-						w.WriteHeader(http.StatusForbidden)
-						return
-					}
-				}
-			}
-			if rep.Reputation < fw.RejectBelowScore {
-				if fw.LogBlocked {
-					log.Printf(
-						"%s blocking %s due to reputation %d less than min %d",
-						fwLogPrefix,
-						srcIP.String(),
-						rep.Reputation,
-						fw.RejectBelowScore,
-					)
-				}
-				w.WriteHeader(http.StatusForbidden)
+
+		srcIP, err := extractIP(r)
+		if err != nil {
+			if fw.FailOpen {
+				h.ServeHTTP(w, r)
 				return
 			}
+			if fw.LogBlocked {
+				log.Printf(
+					"%s an error occurred extracting ip from request, error: %s",
+					fwLogPrefix,
+					err,
+				)
+			}
+			w.WriteHeader(http.StatusForbidden)
+			return
 		}
-		h.ServeHTTP(w, r)
+
+		if isWhitelisted(srcIP, fw.Whitelist) {
+			h.ServeHTTP(w, r)
+			return
+		}
+
+		rep, err := c.GetReputation("ip", srcIP.String())
+		if err != nil {
+			if err == errNoEntry || fw.FailOpen {
+				h.ServeHTTP(w, r)
+				return
+			}
+			if fw.LogBlocked {
+				log.Printf(
+					"%s an error occurred getting ip reputation, blocking %s, error: %s",
+					fwLogPrefix,
+					srcIP.String(),
+					err,
+				)
+			}
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
+
+		if rep.Reputation >= fw.RejectBelowScore {
+			h.ServeHTTP(w, r)
+			return
+		}
+
+		if fw.LogBlocked {
+			log.Printf(
+				"%s blocking %s due to reputation %d less than min %d",
+				fwLogPrefix,
+				srcIP.String(),
+				rep.Reputation,
+				fw.RejectBelowScore,
+			)
+		}
+		w.WriteHeader(http.StatusForbidden)
+		return
 	})
 }
 
@@ -118,4 +133,18 @@ func isWhitelisted(src net.IP, trusted []net.IP) bool {
 		}
 	}
 	return false
+}
+
+func extractIP(r *http.Request) (net.IP, error) {
+	// try to get original IP
+	ip := net.ParseIP(strings.Split(r.Header.Get("X-Forwarded-For"), ",")[0])
+	if ip != nil {
+		return ip, nil
+	}
+	// otherwise settle for last hop router
+	ip = net.ParseIP(strings.Split(r.RemoteAddr, ":")[0])
+	if ip != nil {
+		return ip, nil
+	}
+	return nil, errors.New("no remote ip found in request")
 }
