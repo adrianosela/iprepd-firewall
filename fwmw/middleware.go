@@ -136,12 +136,10 @@ func isWhitelisted(src net.IP, trusted []net.IP) bool {
 }
 
 func extractIP(r *http.Request) (net.IP, error) {
-	// try to get original IP
 	ip := net.ParseIP(strings.Split(r.Header.Get("X-Forwarded-For"), ",")[0])
 	if ip != nil {
 		return ip, nil
 	}
-	// otherwise settle for last hop router
 	ip = net.ParseIP(strings.Split(r.RemoteAddr, ":")[0])
 	if ip != nil {
 		return ip, nil
