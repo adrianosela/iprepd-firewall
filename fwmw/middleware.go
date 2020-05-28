@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/adrianosela/iprepd"
+	"go.mozilla.org/iprepd"
 )
 
 // Firewall is a software defined firewall for HTTP servers. It uses Reputation
@@ -103,21 +103,21 @@ func (fw *Firewall) Wrap(h http.Handler) http.Handler {
 			return
 		}
 
-		if rep.Reputation >= fw.RejectBelowScore {
-			h.ServeHTTP(w, r)
+		if rep.Reputation < fw.RejectBelowScore {
+			if fw.LogBlocked {
+				log.Printf(
+					"%s blocking %s due to reputation %d less than min %d",
+					fwLogPrefix,
+					srcIP.String(),
+					rep.Reputation,
+					fw.RejectBelowScore,
+				)
+			}
+			w.WriteHeader(http.StatusForbidden)
 			return
 		}
 
-		if fw.LogBlocked {
-			log.Printf(
-				"%s blocking %s due to reputation %d less than min %d",
-				fwLogPrefix,
-				srcIP.String(),
-				rep.Reputation,
-				fw.RejectBelowScore,
-			)
-		}
-		w.WriteHeader(http.StatusForbidden)
+		h.ServeHTTP(w, r)
 		return
 	})
 }
