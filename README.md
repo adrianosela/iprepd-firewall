@@ -1,6 +1,6 @@
 # iprepd-firewall
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/adrianosela/iprepd-firewall/fwmw)](https://goreportcard.com/report/github.com/adrianosela/iprepd-firewall/fwmw)
+[![Go Report Card](https://goreportcard.com/badge/github.com/adrianosela/iprepd-firewall)](https://goreportcard.com/report/github.com/adrianosela/iprepd-firewall)
 [![GitHub issues](https://img.shields.io/github/issues/adrianosela/iprepd-firewall.svg)](https://github.com/adrianosela/iprepd-firewall/issues)
 [![Documentation](https://godoc.org/github.com/adrianosela/iprepd-firewall/fwmw?status.svg)](https://godoc.org/github.com/adrianosela/iprepd-firewall/fwmw)
 [![license](https://img.shields.io/github/license/adrianosela/iprepd-firewall.svg)](https://github.com/adrianosela/iprepd-firewall/blob/master/LICENSE)
